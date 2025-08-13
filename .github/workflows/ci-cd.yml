@@ -7,23 +7,27 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build_and_test:
     runs-on: windows-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+
+      # Step 1: Install a specific version of the .NET SDK
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          node-version: 18
+          dotnet-version: '8.0.x'  # This action installs the .NET SDK for you.
 
-      - name: Install dependencies
-        run: npm install
+      # Step 2: Restore NuGet packages (which will include NUnit and Selenium)
+      - name: Restore dependencies MySolution.sln
+        run: dotnet restore
 
-      - name: Run tests
-        run: npm test
+      # Step 3: Build the solution
+      - name: Build
+        run: dotnet build MySolution.sln --configuration Release --no-restore
 
-      # Optional: Deploy step
-      # - name: Deploy to Production
-      #   run: ./deploy.sh
+      # Step 4: Run the NUnit tests with dotnet test
+      - name: Run NUnit tests with Selenium
+        run: dotnet test TestProject.csproj --configuration Release --no-build
